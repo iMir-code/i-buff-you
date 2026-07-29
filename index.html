@@ -401,6 +401,40 @@
       activeDay: 0,      // 0=oggi, 1=domani, 2=dopodomani
       realtimeChannel: null,
     };
+
+    // === VIEW MANAGEMENT ===
+    function showView(viewId) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById(viewId).classList.add('active');
+    }
+
+    // === AUTH ===
+    const AUTH = {
+      async login(username, password) {
+        const slug = username.trim().toLowerCase().replace(/\s+/g, '_');
+        const email = `${slug}@ibuffyou.game`;
+        const { data, error } = await db.auth.signInWithPassword({ email, password });
+        if (error) throw new Error(error.message);
+        return data.session;
+      },
+
+      async logout() {
+        await db.auth.signOut();
+        STATE.session = null;
+        STATE.profile = null;
+        STATE.bookings = [];
+        if (STATE.realtimeChannel) {
+          db.removeChannel(STATE.realtimeChannel);
+          STATE.realtimeChannel = null;
+        }
+        showView('view-login');
+      },
+
+      async getSession() {
+        const { data } = await db.auth.getSession();
+        return data.session;
+      },
+    };
   </script>
 </body>
 </html>
