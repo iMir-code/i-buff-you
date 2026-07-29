@@ -17,6 +17,7 @@
       --matched: #4a7c59;
       --waiting: #444;
       --danger: #8b3a3a;
+      --success: #4a7c59;
       --btn-bg: #2a2a2a;
       --btn-text: #e8e8e8;
     }
@@ -30,6 +31,7 @@
       --matched: #2d6b3c;
       --waiting: #bbb;
       --danger: #c0392b;
+      --success: #2d6b3c;
       --btn-bg: #e8e8e8;
       --btn-text: #111;
     }
@@ -206,7 +208,7 @@
     .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
     .btn-full { width: 100%; padding: 0.9rem; font-size: 1rem; }
     .btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
-    .btn-icon { background: none; border: none; cursor: pointer; font-size: 1.3rem; padding: 0.25rem; }
+    .btn-icon { background: none; border: none; cursor: pointer; font-size: 1.3rem; padding: 0.25rem; color: var(--text); }
     .error-msg { color: var(--danger); font-size: 0.85rem; text-align: center; min-height: 1.2em; }
     .loading { color: var(--text-muted); text-align: center; padding: 2rem; font-size: 0.9rem; }
     .empty-msg { color: var(--text-muted); font-size: 0.85rem; font-style: italic; }
@@ -294,6 +296,12 @@
       <div class="settings-section">
         <h3 id="settings-section-admin">USER MANAGEMENT</h3>
         <div id="admin-user-list"><div class="loading">Loading users...</div></div>
+        <div style="margin-top:1rem;display:flex;flex-direction:column;gap:0.5rem">
+          <input class="input" id="admin-new-nickname" type="text" placeholder="Nickname">
+          <input class="input" id="admin-new-password" type="password" placeholder="Password">
+          <button class="btn btn-primary" id="admin-create-btn">Create User</button>
+          <p class="error-msg" id="admin-create-error"></p>
+        </div>
       </div>
     </div>
   </div>
@@ -319,6 +327,8 @@
         login_subtitle: 'Enter your credentials', loading: 'Loading...',
         error_login: 'Invalid credentials', error_save: 'Error saving',
         deactivate: 'Deactivate', activate: 'Activate', active: 'Active', inactive: 'Inactive',
+        create_user: 'Create User', new_nickname: 'New Nickname', temp_password: 'Temp Password',
+        create: 'Create', user_created: 'User created!', error_create: 'Error creating user',
       },
       it: {
         enter: 'ENTRA', today: 'OGGI', tomorrow: 'DOMANI', after: 'DOPO',
@@ -332,6 +342,8 @@
         login_subtitle: 'Inserisci le tue credenziali', loading: 'Caricamento...',
         error_login: 'Credenziali non valide', error_save: 'Errore nel salvataggio',
         deactivate: 'Disattiva', activate: 'Attiva', active: 'Attivo', inactive: 'Inattivo',
+        create_user: 'Crea Utente', new_nickname: 'Nuovo Nickname', temp_password: 'Password Temporanea',
+        create: 'Crea', user_created: 'Utente creato!', error_create: 'Errore nella creazione',
       },
       fr: {
         enter: 'ENTRER', today: "AUJOURD'HUI", tomorrow: 'DEMAIN', after: 'APRÈS',
@@ -345,6 +357,8 @@
         login_subtitle: 'Entrez vos identifiants', loading: 'Chargement...',
         error_login: 'Identifiants invalides', error_save: 'Erreur de sauvegarde',
         deactivate: 'Désactiver', activate: 'Activer', active: 'Actif', inactive: 'Inactif',
+        create_user: 'Créer Utilisateur', new_nickname: 'Nouveau Pseudo', temp_password: 'Mot de passe temporaire',
+        create: 'Créer', user_created: 'Utilisateur créé !', error_create: 'Erreur de création',
       },
       es: {
         enter: 'ENTRAR', today: 'HOY', tomorrow: 'MAÑANA', after: 'PASADO',
@@ -358,6 +372,8 @@
         login_subtitle: 'Introduce tus credenciales', loading: 'Cargando...',
         error_login: 'Credenciales inválidas', error_save: 'Error al guardar',
         deactivate: 'Desactivar', activate: 'Activar', active: 'Activo', inactive: 'Inactivo',
+        create_user: 'Crear Usuario', new_nickname: 'Nuevo Apodo', temp_password: 'Contraseña temporal',
+        create: 'Crear', user_created: '¡Usuario creado!', error_create: 'Error al crear',
       },
       de: {
         enter: 'EINTRETEN', today: 'HEUTE', tomorrow: 'MORGEN', after: 'ÜBERMORGEN',
@@ -371,6 +387,8 @@
         login_subtitle: 'Anmeldedaten eingeben', loading: 'Lädt...',
         error_login: 'Ungültige Anmeldedaten', error_save: 'Fehler beim Speichern',
         deactivate: 'Deaktivieren', activate: 'Aktivieren', active: 'Aktiv', inactive: 'Inaktiv',
+        create_user: 'Benutzer erstellen', new_nickname: 'Neuer Spitzname', temp_password: 'Temp. Passwort',
+        create: 'Erstellen', user_created: 'Benutzer erstellt!', error_create: 'Fehler beim Erstellen',
       },
       id: {
         enter: 'MASUK', today: 'HARI INI', tomorrow: 'BESOK', after: 'LUSA',
@@ -384,6 +402,8 @@
         login_subtitle: 'Masukkan kredensial Anda', loading: 'Memuat...',
         error_login: 'Kredensial tidak valid', error_save: 'Kesalahan penyimpanan',
         deactivate: 'Nonaktifkan', activate: 'Aktifkan', active: 'Aktif', inactive: 'Tidak Aktif',
+        create_user: 'Buat Pengguna', new_nickname: 'Nama Panggilan Baru', temp_password: 'Kata Sandi Sementara',
+        create: 'Buat', user_created: 'Pengguna dibuat!', error_create: 'Gagal membuat pengguna',
       },
     };
 
@@ -753,11 +773,16 @@
           'settings-save': 'save',
           'logout-btn': 'logout',
           'slots-loading': 'loading',
+          'admin-create-btn': 'create_user',
         };
         Object.entries(map).forEach(([id, key]) => {
           const el = document.getElementById(id);
           if (el) el.textContent = T(key);
         });
+        const nn = document.getElementById('admin-new-nickname');
+        if (nn) nn.placeholder = T('new_nickname');
+        const pw = document.getElementById('admin-new-password');
+        if (pw) pw.placeholder = T('temp_password');
       },
     };
 
@@ -789,6 +814,20 @@
           .update({ active: !currentActive })
           .eq('id', userId);
         this.renderUserList();
+      },
+
+      async createUser(nickname, password) {
+        const slug = nickname.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+        if (!slug || !password) throw new Error('invalid input');
+        const email = `${slug}@ibuffyou.game`;
+        const { data, error } = await db.auth.signUp({ email, password });
+        if (error) throw error;
+        if (data?.user) {
+          await db.from('profiles')
+            .update({ display_name: nickname.trim() })
+            .eq('id', data.user.id);
+        }
+        await this.renderUserList();
       },
     };
 
@@ -870,6 +909,29 @@
         if (e.target.dataset.action === 'toggle-active') {
           const { userId, currentActive } = e.target.dataset;
           await ADMIN.toggleActive(userId, currentActive === 'true');
+        }
+      });
+
+      // ADMIN: CREA UTENTE
+      document.getElementById('admin-create-btn').addEventListener('click', async () => {
+        const errEl = document.getElementById('admin-create-error');
+        const btn = document.getElementById('admin-create-btn');
+        const nickname = document.getElementById('admin-new-nickname').value.trim();
+        const password = document.getElementById('admin-new-password').value;
+        errEl.textContent = '';
+        btn.disabled = true;
+        try {
+          await ADMIN.createUser(nickname, password);
+          document.getElementById('admin-new-nickname').value = '';
+          document.getElementById('admin-new-password').value = '';
+          errEl.style.color = 'var(--success)';
+          errEl.textContent = T('user_created');
+          setTimeout(() => { errEl.textContent = ''; errEl.style.color = ''; }, 3000);
+        } catch (e) {
+          errEl.style.color = '';
+          errEl.textContent = T('error_create') + ': ' + (e.message || '');
+        } finally {
+          btn.disabled = false;
         }
       });
 
