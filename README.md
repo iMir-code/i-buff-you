@@ -67,4 +67,5 @@ WHERE display_name = 'NicknameUtente';
 
 | Data | Versione | Descrizione |
 |------|----------|-------------|
+| 2026-07-29 | v1.1 | Fix: icone settings/back invisibili in dark mode; form crea utente nell'admin panel (client isolato per preservare sessione admin); bottone ✕ visibile anche per il richiedente in un match; fix cancel match (partner torna "in attesa"); fix RLS admin su profili (disattiva/attiva utenti); trigger aggiornato con display_name da email prefix; SQL per confermare utenti @ibuffyou.game |
 | 2026-07-29 | v1.0 | Release iniziale — login, slot UTC-2, matching donatore/richiedente, 6 lingue, tema dark/light, pannello admin |
