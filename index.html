@@ -494,6 +494,41 @@
         return Math.floor(utcMinus2.getUTCHours() / 4);
       },
     };
+
+    // === PROFILE ===
+    const PROFILE = {
+      async load(userId) {
+        const { data, error } = await db
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+        if (error) throw error;
+        STATE.profile = data;
+        this.applyTheme(data.theme);
+        this.applyLanguage(data.language);
+        return data;
+      },
+
+      async save({ display_name, timezone_offset, language, theme }) {
+        const { error } = await db
+          .from('profiles')
+          .update({ display_name, timezone_offset, language, theme })
+          .eq('id', STATE.session.user.id);
+        if (error) throw error;
+        STATE.profile = { ...STATE.profile, display_name, timezone_offset, language, theme };
+        this.applyTheme(theme);
+        this.applyLanguage(language);
+      },
+
+      applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme || 'dark');
+      },
+
+      applyLanguage(lang) {
+        document.documentElement.lang = lang || 'en';
+      },
+    };
   </script>
 </body>
 </html>
