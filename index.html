@@ -760,6 +760,37 @@
         });
       },
     };
+
+    // === ADMIN ===
+    const ADMIN = {
+      async renderUserList() {
+        const container = document.getElementById('admin-user-list');
+        const { data, error } = await db
+          .from('profiles')
+          .select('id, display_name, active, role')
+          .order('display_name');
+        if (error) { container.innerHTML = `<div class="error-msg">${error.message}</div>`; return; }
+
+        container.innerHTML = data.map(u => `
+          <div class="user-list-item">
+            <span>${u.display_name} ${u.role === 'admin' ? '★' : ''}</span>
+            <span style="font-size:0.75rem;color:var(--text-muted)">${u.active ? T('active') : T('inactive')}</span>
+            ${u.id !== STATE.session.user.id
+              ? `<button class="btn ${u.active ? 'btn-danger' : ''}" data-action="toggle-active" data-user-id="${u.id}" data-current-active="${u.active}">
+                  ${u.active ? T('deactivate') : T('activate')}
+                 </button>`
+              : ''}
+          </div>
+        `).join('');
+      },
+
+      async toggleActive(userId, currentActive) {
+        await db.from('profiles')
+          .update({ active: !currentActive })
+          .eq('id', userId);
+        this.renderUserList();
+      },
+    };
   </script>
 </body>
 </html>
