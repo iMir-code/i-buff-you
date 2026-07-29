@@ -299,7 +299,108 @@
   </div>
 
   <script>
-    // === CODICE JS (Task 3 in poi) ===
+    // === CONFIG ===
+    const SUPABASE_URL = 'https://xszxzfvjnyufkrlxrmmr.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_CajjQLSO6Ye8JuYcrG1q-Q_olu_-VAV';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // === TRANSLATIONS ===
+    const TRANSLATIONS = {
+      en: {
+        enter: 'ENTER', today: 'TODAY', tomorrow: 'TOMORROW', after: 'AFTER',
+        donor: 'Donor', requester: 'Requester', science: 'Science', construction: 'Construction',
+        donate_science: '+ Donate 🔬', donate_construction: '+ Donate 🏗',
+        request_science: '+ Request 🔬', request_construction: '+ Request 🏗',
+        waiting: 'waiting', settings: 'Settings', save: 'Save', logout: 'Logout',
+        nickname: 'Nickname', language: 'Language', theme: 'Theme', timezone: 'Timezone (UTC offset)',
+        day_starts: 'Game day starts at', your_time: 'your time',
+        profile: 'PROFILE', display: 'DISPLAY', admin_panel: 'USER MANAGEMENT',
+        login_subtitle: 'Enter your credentials', loading: 'Loading...',
+        error_login: 'Invalid credentials', error_save: 'Error saving',
+        deactivate: 'Deactivate', activate: 'Activate', active: 'Active', inactive: 'Inactive',
+      },
+      it: {
+        enter: 'ENTRA', today: 'OGGI', tomorrow: 'DOMANI', after: 'DOPO',
+        donor: 'Donatore', requester: 'Richiedente', science: 'Scienza', construction: 'Costruzione',
+        donate_science: '+ Dona 🔬', donate_construction: '+ Dona 🏗',
+        request_science: '+ Chiedi 🔬', request_construction: '+ Chiedi 🏗',
+        waiting: 'in attesa', settings: 'Impostazioni', save: 'Salva', logout: 'Esci',
+        nickname: 'Nickname', language: 'Lingua', theme: 'Tema', timezone: 'Fuso orario (offset UTC)',
+        day_starts: 'La giornata di gioco inizia alle', your_time: 'ora tua',
+        profile: 'PROFILO', display: 'ASPETTO', admin_panel: 'GESTIONE UTENTI',
+        login_subtitle: 'Inserisci le tue credenziali', loading: 'Caricamento...',
+        error_login: 'Credenziali non valide', error_save: 'Errore nel salvataggio',
+        deactivate: 'Disattiva', activate: 'Attiva', active: 'Attivo', inactive: 'Inattivo',
+      },
+      fr: {
+        enter: 'ENTRER', today: "AUJOURD'HUI", tomorrow: 'DEMAIN', after: 'APRÈS',
+        donor: 'Donneur', requester: 'Demandeur', science: 'Science', construction: 'Construction',
+        donate_science: '+ Donner 🔬', donate_construction: '+ Donner 🏗',
+        request_science: '+ Demander 🔬', request_construction: '+ Demander 🏗',
+        waiting: 'en attente', settings: 'Paramètres', save: 'Sauvegarder', logout: 'Déconnexion',
+        nickname: 'Pseudo', language: 'Langue', theme: 'Thème', timezone: 'Fuseau horaire (décalage UTC)',
+        day_starts: 'La journée de jeu commence à', your_time: 'heure locale',
+        profile: 'PROFIL', display: 'AFFICHAGE', admin_panel: 'GESTION DES UTILISATEURS',
+        login_subtitle: 'Entrez vos identifiants', loading: 'Chargement...',
+        error_login: 'Identifiants invalides', error_save: 'Erreur de sauvegarde',
+        deactivate: 'Désactiver', activate: 'Activer', active: 'Actif', inactive: 'Inactif',
+      },
+      es: {
+        enter: 'ENTRAR', today: 'HOY', tomorrow: 'MAÑANA', after: 'PASADO',
+        donor: 'Donante', requester: 'Solicitante', science: 'Ciencia', construction: 'Construcción',
+        donate_science: '+ Donar 🔬', donate_construction: '+ Donar 🏗',
+        request_science: '+ Pedir 🔬', request_construction: '+ Pedir 🏗',
+        waiting: 'esperando', settings: 'Ajustes', save: 'Guardar', logout: 'Salir',
+        nickname: 'Apodo', language: 'Idioma', theme: 'Tema', timezone: 'Huso horario (offset UTC)',
+        day_starts: 'El día de juego empieza a las', your_time: 'hora local',
+        profile: 'PERFIL', display: 'PANTALLA', admin_panel: 'GESTIÓN DE USUARIOS',
+        login_subtitle: 'Introduce tus credenciales', loading: 'Cargando...',
+        error_login: 'Credenciales inválidas', error_save: 'Error al guardar',
+        deactivate: 'Desactivar', activate: 'Activar', active: 'Activo', inactive: 'Inactivo',
+      },
+      de: {
+        enter: 'EINTRETEN', today: 'HEUTE', tomorrow: 'MORGEN', after: 'ÜBERMORGEN',
+        donor: 'Geber', requester: 'Empfänger', science: 'Wissenschaft', construction: 'Bau',
+        donate_science: '+ Geben 🔬', donate_construction: '+ Geben 🏗',
+        request_science: '+ Anfragen 🔬', request_construction: '+ Anfragen 🏗',
+        waiting: 'wartend', settings: 'Einstellungen', save: 'Speichern', logout: 'Abmelden',
+        nickname: 'Spitzname', language: 'Sprache', theme: 'Thema', timezone: 'Zeitzone (UTC-Versatz)',
+        day_starts: 'Spieltag beginnt um', your_time: 'Ortszeit',
+        profile: 'PROFIL', display: 'ANZEIGE', admin_panel: 'BENUTZERVERWALTUNG',
+        login_subtitle: 'Anmeldedaten eingeben', loading: 'Lädt...',
+        error_login: 'Ungültige Anmeldedaten', error_save: 'Fehler beim Speichern',
+        deactivate: 'Deaktivieren', activate: 'Aktivieren', active: 'Aktiv', inactive: 'Inaktiv',
+      },
+      id: {
+        enter: 'MASUK', today: 'HARI INI', tomorrow: 'BESOK', after: 'LUSA',
+        donor: 'Pemberi', requester: 'Peminta', science: 'Sains', construction: 'Konstruksi',
+        donate_science: '+ Beri 🔬', donate_construction: '+ Beri 🏗',
+        request_science: '+ Minta 🔬', request_construction: '+ Minta 🏗',
+        waiting: 'menunggu', settings: 'Pengaturan', save: 'Simpan', logout: 'Keluar',
+        nickname: 'Nama Panggilan', language: 'Bahasa', theme: 'Tema', timezone: 'Zona Waktu (offset UTC)',
+        day_starts: 'Hari permainan dimulai pukul', your_time: 'waktu lokal',
+        profile: 'PROFIL', display: 'TAMPILAN', admin_panel: 'MANAJEMEN PENGGUNA',
+        login_subtitle: 'Masukkan kredensial Anda', loading: 'Memuat...',
+        error_login: 'Kredensial tidak valid', error_save: 'Kesalahan penyimpanan',
+        deactivate: 'Nonaktifkan', activate: 'Aktifkan', active: 'Aktif', inactive: 'Tidak Aktif',
+      },
+    };
+
+    // Restituisce la stringa tradotta nella lingua corrente
+    function T(key) {
+      const lang = STATE.profile?.language || 'en';
+      return (TRANSLATIONS[lang] || TRANSLATIONS.en)[key] || key;
+    }
+
+    // === STATE ===
+    const STATE = {
+      session: null,
+      profile: null,
+      bookings: [],
+      activeDay: 0,      // 0=oggi, 1=domani, 2=dopodomani
+      realtimeChannel: null,
+    };
   </script>
 </body>
 </html>
