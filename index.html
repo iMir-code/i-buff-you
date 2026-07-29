@@ -791,6 +791,162 @@
         this.renderUserList();
       },
     };
+
+    // === EVENTS ===
+    function initEvents() {
+      // LOGIN
+      document.getElementById('login-btn').addEventListener('click', async () => {
+        const username = document.getElementById('login-username').value.trim();
+        const password = document.getElementById('login-password').value;
+        const errEl = document.getElementById('login-error');
+        errEl.textContent = '';
+        if (!username || !password) return;
+        try {
+          STATE.session = await AUTH.login(username, password);
+          await onLoggedIn();
+        } catch (e) {
+          errEl.textContent = T('error_login');
+        }
+      });
+
+      // Invio con Enter nel form di login
+      ['login-username', 'login-password'].forEach(id => {
+        document.getElementById(id).addEventListener('keydown', e => {
+          if (e.key === 'Enter') document.getElementById('login-btn').click();
+        });
+      });
+
+      // LOGOUT
+      document.getElementById('logout-btn').addEventListener('click', () => AUTH.logout());
+
+      // NAVIGAZIONE SETTINGS
+      document.getElementById('settings-btn').addEventListener('click', () => {
+        RENDER.settingsView();
+        showView('view-settings');
+      });
+      document.getElementById('settings-back').addEventListener('click', () => {
+        showView('view-main');
+        RENDER.mainView();
+      });
+
+      // TAB SELECTOR
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          STATE.activeDay = Number(btn.dataset.day);
+          RENDER.mainView();
+        });
+      });
+
+      // AZIONI DINAMICHE (booking + cancel + admin toggle)
+      document.addEventListener('click', async (e) => {
+        // Prenota slot
+        if (e.target.dataset.action === 'book') {
+          const { role, buff, day, slot } = e.target.dataset;
+          e.target.disabled = true;
+          try {
+            await MATCHING.book(day, Number(slot), role, buff);
+            RENDER.mainView();
+          } finally {
+            e.target.disabled = false;
+          }
+        }
+
+        // Cancella prenotazione
+        if (e.target.dataset.action === undefined && e.target.classList.contains('cancel-btn')) {
+          const id = e.target.dataset.bookingId;
+          if (!id) return;
+          e.target.disabled = true;
+          try {
+            await MATCHING.cancel(id);
+            RENDER.mainView();
+          } finally {
+            e.target.disabled = false;
+          }
+        }
+
+        // Admin: attiva/disattiva utente
+        if (e.target.dataset.action === 'toggle-active') {
+          const { userId, currentActive } = e.target.dataset;
+          await ADMIN.toggleActive(userId, currentActive === 'true');
+        }
+      });
+
+      // SAVE SETTINGS
+      document.getElementById('settings-save').addEventListener('click', async () => {
+        const errEl = document.getElementById('settings-error');
+        errEl.textContent = '';
+        try {
+          const nickname = document.getElementById('settings-nickname').value.trim();
+          const timezone_offset = Number(document.getElementById('settings-timezone').value);
+          const language = document.getElementById('settings-language').value;
+          const theme = document.getElementById('settings-theme').value;
+          if (!nickname) { errEl.textContent = T('error_save'); return; }
+          await PROFILE.save({ display_name: nickname, timezone_offset, language, theme });
+          RENDER.applyTranslations();
+          RENDER.settingsView();
+        } catch (e) {
+          errEl.textContent = T('error_save');
+        }
+      });
+
+      // PREVIEW TIMEZONE in tempo reale
+      document.getElementById('settings-timezone').addEventListener('change', (e) => {
+        RENDER._updateTzPreview(Number(e.target.value));
+      });
+    }
+
+    // === REALTIME ===
+    function initRealtime() {
+      if (STATE.realtimeChannel) db.removeChannel(STATE.realtimeChannel);
+      STATE.realtimeChannel = db
+        .channel('bookings-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, async () => {
+          await BOOKINGS.fetchAll();
+          if (document.getElementById('view-main').classList.contains('active')) {
+            RENDER.mainView();
+          }
+        })
+        .subscribe();
+    }
+
+    // === INIT ===
+    async function onLoggedIn() {
+      await PROFILE.load(STATE.session.user.id);
+
+      // Verifica account attivo
+      if (!STATE.profile.active) {
+        await AUTH.logout();
+        document.getElementById('login-error').textContent = T('error_login');
+        return;
+      }
+
+      await BOOKINGS.cleanup();
+      await BOOKINGS.fetchAll();
+      initRealtime();
+      RENDER.applyTranslations();
+      document.getElementById('header-username').textContent = STATE.profile.display_name;
+      showView('view-main');
+      RENDER.mainView();
+    }
+
+    async function init() {
+      initEvents();
+      const session = await AUTH.getSession();
+      if (session) {
+        STATE.session = session;
+        try {
+          await onLoggedIn();
+        } catch (e) {
+          showView('view-login');
+        }
+      } else {
+        showView('view-login');
+      }
+    }
+
+    init();
   </script>
 </body>
 </html>
