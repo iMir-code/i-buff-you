@@ -820,13 +820,26 @@
         const slug = nickname.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
         if (!slug || !password) throw new Error('invalid input');
         const email = `${slug}@ibuffyou.game`;
-        const { data, error } = await db.auth.signUp({ email, password });
+
+        // Client temporaneo isolato: signUp non sostituisce la sessione dell'admin
+        const tmpClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          auth: { persistSession: false, storageKey: 'ibuffyou-tmp-signup' }
+        });
+
+        const { data, error } = await tmpClient.auth.signUp({ email, password });
         if (error) throw error;
+
         if (data?.user) {
-          await db.from('profiles')
-            .update({ display_name: nickname.trim() })
-            .eq('id', data.user.id);
+          // Upsert come nuovo utente (RLS: può scrivere il proprio profilo)
+          await tmpClient.from('profiles').upsert({
+            id: data.user.id,
+            display_name: nickname.trim(),
+            active: true,
+            role: 'user',
+          }, { onConflict: 'id' });
+          await tmpClient.auth.signOut();
         }
+
         await this.renderUserList();
       },
     };
