@@ -529,6 +529,50 @@
         document.documentElement.lang = lang || 'en';
       },
     };
+
+    // === BOOKINGS ===
+    const BOOKINGS = {
+      async fetchAll() {
+        const gameDays = TIME.getGameDays().map(d => d.date);
+        const { data, error } = await db
+          .from('bookings')
+          .select(`
+            id, user_id, game_day, slot_index, role, buff_type, matched_with, created_at,
+            profiles!bookings_user_id_fkey ( display_name )
+          `)
+          .in('game_day', gameDays)
+          .order('created_at', { ascending: true });
+        if (error) throw error;
+        // Appiattisci display_name
+        STATE.bookings = (data || []).map(b => ({
+          ...b,
+          display_name: b.profiles?.display_name || '?',
+        }));
+        return STATE.bookings;
+      },
+
+      async cleanup() {
+        await db.rpc('cleanup_old_bookings', { p_user_id: STATE.session.user.id });
+      },
+
+      // Filtra i bookings per slot specifico
+      forSlot(gameDay, slotIndex) {
+        return STATE.bookings.filter(
+          b => b.game_day === gameDay && b.slot_index === slotIndex
+        );
+      },
+
+      // Booking dell'utente corrente per un dato slot+ruolo+tipo
+      myBooking(gameDay, slotIndex, role, buffType) {
+        return STATE.bookings.find(
+          b => b.game_day === gameDay &&
+               b.slot_index === slotIndex &&
+               b.role === role &&
+               b.buff_type === buffType &&
+               b.user_id === STATE.session.user.id
+        );
+      },
+    };
   </script>
 </body>
 </html>
