@@ -435,6 +435,65 @@
         return data.session;
       },
     };
+
+    // === TIME_UTILS ===
+    const TIME = {
+      // Restituisce la data in UTC-2 per offsetFromToday giorni in avanti
+      _gameDateStr(offsetFromToday = 0) {
+        const now = new Date();
+        // Converti in UTC-2: sottrai 2 ore
+        const utcMinus2 = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+        utcMinus2.setUTCDate(utcMinus2.getUTCDate() + offsetFromToday);
+        return utcMinus2.toISOString().slice(0, 10);  // "YYYY-MM-DD"
+      },
+
+      // Ritorna i 3 giorni di gioco visibili
+      getGameDays() {
+        return [0, 1, 2].map(i => ({ date: this._gameDateStr(i), dayOffset: i }));
+      },
+
+      // Orario slot in ora locale dell'utente: "HH:MM – HH:MM"
+      getSlotRange(gameDay, slotIndex, tzOffset) {
+        // Slot start/end in UTC-2
+        const startHourUTCminus2 = slotIndex * 4;
+        const endHourUTCminus2 = startHourUTCminus2 + 4;
+        // Converti in ora locale: UTC-2 → UTC → UTC+tzOffset
+        const localOffset = tzOffset - (-2);  // differenza da UTC-2 a timezone utente
+        const startLocal = (startHourUTCminus2 + localOffset + 48) % 24;
+        const endLocal = (endHourUTCminus2 + localOffset + 48) % 24;
+        const fmt = h => String(h).padStart(2, '0') + ':00';
+        return `${fmt(startLocal)} – ${fmt(endLocal)}`;
+      },
+
+      // Calcola a che ora locale parte la giornata di gioco (slot 0 inizio)
+      getDayStartLocal(tzOffset) {
+        const localOffset = tzOffset - (-2);
+        const startLocal = (0 + localOffset + 48) % 24;
+        return String(startLocal).padStart(2, '0') + ':00';
+      },
+
+      // Lo slot è già passato?
+      isSlotExpired(gameDay, slotIndex) {
+        const now = new Date();
+        const utcMinus2 = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+        const todayStr = utcMinus2.toISOString().slice(0, 10);
+        if (gameDay < todayStr) return true;
+        if (gameDay > todayStr) return false;
+        // È oggi in UTC-2: confronta slot con ora corrente
+        const currentHour = utcMinus2.getUTCHours();
+        const slotEndHour = (slotIndex + 1) * 4;
+        return currentHour >= slotEndHour;
+      },
+
+      // Indice dello slot corrente nella giornata di gioco (o -1 se non è oggi)
+      getCurrentSlotIndex(gameDay) {
+        const now = new Date();
+        const utcMinus2 = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+        const todayStr = utcMinus2.toISOString().slice(0, 10);
+        if (gameDay !== todayStr) return -1;
+        return Math.floor(utcMinus2.getUTCHours() / 4);
+      },
+    };
   </script>
 </body>
 </html>
