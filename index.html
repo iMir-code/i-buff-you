@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>I BUFF YOU</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* === VARIABILI TEMA === */
+    :root[data-theme="dark"] {
+      --bg: #0f0f0f;
+      --surface: #1a1a1a;
+      --border: #2a2a2a;
+      --text: #e8e8e8;
+      --text-muted: #666;
+      --accent: #c8a96e;
+      --matched: #4a7c59;
+      --waiting: #444;
+      --danger: #8b3a3a;
+      --btn-bg: #2a2a2a;
+      --btn-text: #e8e8e8;
+    }
+    :root[data-theme="light"] {
+      --bg: #f5f5f5;
+      --surface: #ffffff;
+      --border: #ddd;
+      --text: #111;
+      --text-muted: #999;
+      --accent: #8b6914;
+      --matched: #2d6b3c;
+      --waiting: #bbb;
+      --danger: #c0392b;
+      --btn-bg: #e8e8e8;
+      --btn-text: #111;
+    }
+
+    /* === RESET & BASE === */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 16px;
+      min-height: 100vh;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* === VIEW MANAGEMENT === */
+    .view { display: none; flex-direction: column; min-height: 100vh; }
+    .view.active { display: flex; }
+
+    /* === LOGIN VIEW === */
+    #view-login {
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+      gap: 1.5rem;
+    }
+    #view-login h1 { font-size: 2rem; letter-spacing: 0.1em; color: var(--accent); }
+    #view-login p.subtitle { color: var(--text-muted); font-size: 0.9rem; }
+
+    /* === MAIN VIEW === */
+    #view-main { padding-bottom: 1rem; }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 10;
+    }
+    .header h1 { font-size: 1.1rem; color: var(--accent); }
+    .header-user { font-size: 0.9rem; color: var(--text-muted); }
+
+    /* === TAB SELECTOR === */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+      position: sticky;
+      top: 57px;
+      z-index: 9;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 0.75rem;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      letter-spacing: 0.05em;
+    }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    /* === SLOT CARDS === */
+    .slots-container { padding: 0.75rem; display: flex; flex-direction: column; gap: 0.75rem; }
+    .slot-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .slot-header {
+      padding: 0.6rem 0.75rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+    .slot-header.current { color: var(--accent); }
+    .buff-section { padding: 0.6rem 0.75rem; }
+    .buff-section + .buff-section { border-top: 1px solid var(--border); }
+    .buff-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 0.3rem;
+      font-weight: 600;
+    }
+    .booking-row {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.9rem;
+      padding: 0.2rem 0;
+    }
+    .booking-name { flex: 1; }
+    .booking-name.matched { color: var(--matched); font-weight: 500; }
+    .booking-name.waiting { color: var(--waiting); }
+    .match-arrow { color: var(--matched); font-size: 0.8rem; }
+    .cancel-btn {
+      background: none;
+      border: none;
+      color: var(--danger);
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 0 0.2rem;
+      line-height: 1;
+    }
+    .slot-actions {
+      padding: 0.5rem 0.75rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      border-top: 1px solid var(--border);
+    }
+
+    /* === SETTINGS VIEW === */
+    #view-settings { padding: 1rem; gap: 1.5rem; }
+    .settings-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .settings-section { display: flex; flex-direction: column; gap: 0.75rem; }
+    .settings-section h3 { font-size: 0.75rem; color: var(--text-muted); letter-spacing: 0.1em; font-weight: 600; }
+    .settings-row { display: flex; flex-direction: column; gap: 0.3rem; }
+    .settings-label { font-size: 0.85rem; color: var(--text-muted); }
+    .tz-preview { font-size: 0.8rem; color: var(--accent); margin-top: 0.2rem; }
+    .admin-section { border-top: 1px solid var(--border); padding-top: 1rem; }
+    .user-list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+
+    /* === COMPONENTI CONDIVISI === */
+    input, select {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.75rem;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+    input:focus, select:focus { outline: none; border-color: var(--accent); }
+    .btn {
+      background: var(--btn-bg);
+      color: var(--btn-text);
+      border: 1px solid var(--border);
+      padding: 0.6rem 0.9rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      white-space: nowrap;
+    }
+    .btn:active { opacity: 0.7; }
+    .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-full { width: 100%; padding: 0.9rem; font-size: 1rem; }
+    .btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+    .btn-icon { background: none; border: none; cursor: pointer; font-size: 1.3rem; padding: 0.25rem; }
+    .error-msg { color: var(--danger); font-size: 0.85rem; text-align: center; min-height: 1.2em; }
+    .loading { color: var(--text-muted); text-align: center; padding: 2rem; font-size: 0.9rem; }
+    .empty-msg { color: var(--text-muted); font-size: 0.85rem; font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <!-- LOGIN VIEW -->
+  <div id="view-login" class="view active">
+    <h1>I BUFF YOU</h1>
+    <p class="subtitle" id="login-subtitle">Enter your credentials</p>
+    <input type="text" id="login-username" placeholder="Nickname" autocomplete="username">
+    <input type="password" id="login-password" placeholder="Password" autocomplete="current-password">
+    <p class="error-msg" id="login-error"></p>
+    <button class="btn btn-primary btn-full" id="login-btn">ENTER</button>
+  </div>
+
+  <!-- MAIN VIEW -->
+  <div id="view-main" class="view">
+    <div class="header">
+      <h1>I BUFF YOU</h1>
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <span class="header-user" id="header-username"></span>
+        <button class="btn-icon" id="settings-btn">⚙</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" data-day="0" id="tab-0">TODAY</button>
+      <button class="tab-btn" data-day="1" id="tab-1">TOMORROW</button>
+      <button class="tab-btn" data-day="2" id="tab-2">AFTER</button>
+    </div>
+    <div class="slots-container" id="slots-container">
+      <div class="loading" id="slots-loading">Loading...</div>
+    </div>
+  </div>
+
+  <!-- SETTINGS VIEW -->
+  <div id="view-settings" class="view">
+    <div class="settings-header">
+      <button class="btn-icon" id="settings-back">←</button>
+      <h2 id="settings-title">Settings</h2>
+    </div>
+
+    <div class="settings-section">
+      <h3 id="settings-section-profile">PROFILE</h3>
+      <div class="settings-row">
+        <label class="settings-label" id="label-nickname">Nickname</label>
+        <input type="text" id="settings-nickname" maxlength="30">
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3 id="settings-section-display">DISPLAY</h3>
+      <div class="settings-row">
+        <label class="settings-label" id="label-language">Language</label>
+        <select id="settings-language">
+          <option value="en">English</option>
+          <option value="it">Italiano</option>
+          <option value="fr">Français</option>
+          <option value="es">Español</option>
+          <option value="de">Deutsch</option>
+          <option value="id">Bahasa Indonesia</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <label class="settings-label" id="label-theme">Theme</label>
+        <select id="settings-theme">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <label class="settings-label" id="label-timezone">Timezone (UTC offset)</label>
+        <select id="settings-timezone"></select>
+        <p class="tz-preview" id="tz-preview"></p>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-full" id="settings-save">Save</button>
+    <p class="error-msg" id="settings-error"></p>
+    <button class="btn btn-full" id="logout-btn">Logout</button>
+
+    <!-- ADMIN ONLY -->
+    <div class="admin-section" id="admin-section" style="display:none">
+      <div class="settings-section">
+        <h3 id="settings-section-admin">USER MANAGEMENT</h3>
+        <div id="admin-user-list"><div class="loading">Loading users...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // === CODICE JS (Task 3 in poi) ===
+  </script>
+</body>
+</html>
