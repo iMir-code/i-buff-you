@@ -689,8 +689,15 @@
             if (isMatched && partner) {
               if (role === 'donor') {
                 nameHtml = `<span class="booking-name matched">${b.display_name} <span class="match-arrow">↔</span> ${partner.display_name}</span>`;
+                // Il bottone ✕ appare se l'utente corrente è il donatore O il richiedente della coppia
+                const isMeInPair = b.user_id === myId || partner.user_id === myId;
+                const myBookingId = b.user_id === myId ? b.id : partner.id;
+                const cancelBtn = isMeInPair
+                  ? `<button class="cancel-btn" data-booking-id="${myBookingId}" title="Cancel">✕</button>`
+                  : '';
+                return `<div class="booking-row">${nameHtml}${cancelBtn}</div>`;
               } else {
-                return '';  // requester matchato: già mostrato dal donor
+                return '';  // requester matchato: mostrato nella riga del donor
               }
             } else {
               nameHtml = `<span class="booking-name waiting">${b.display_name} (${T('waiting')})</span>`;
