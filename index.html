@@ -573,6 +573,46 @@
         );
       },
     };
+
+    // === MATCHING ===
+    const MATCHING = {
+      async book(gameDay, slotIndex, role, buffType) {
+        // Inserisci il booking
+        const { data: newBooking, error: insertError } = await db
+          .from('bookings')
+          .insert({
+            user_id: STATE.session.user.id,
+            game_day: gameDay,
+            slot_index: slotIndex,
+            role: role,
+            buff_type: buffType,
+          })
+          .select()
+          .single();
+        if (insertError) throw insertError;
+
+        // Chiama RPC per tentare il match
+        await db.rpc('try_match_booking', { p_booking_id: newBooking.id });
+
+        // Ricarica tutti i bookings
+        await BOOKINGS.fetchAll();
+      },
+
+      async cancel(bookingId) {
+        // Prima rimuovi il match del partner (se esiste)
+        await db.rpc('unmatch_partner', { p_booking_id: bookingId });
+
+        // Poi elimina il proprio booking
+        const { error } = await db
+          .from('bookings')
+          .delete()
+          .eq('id', bookingId);
+        if (error) throw error;
+
+        // Ricarica
+        await BOOKINGS.fetchAll();
+      },
+    };
   </script>
 </body>
 </html>
