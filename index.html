@@ -613,6 +613,153 @@
         await BOOKINGS.fetchAll();
       },
     };
+
+    // === RENDER ===
+    const RENDER = {
+      mainView() {
+        const profile = STATE.profile;
+        const tzOffset = profile?.timezone_offset ?? 0;
+        const gameDays = TIME.getGameDays();
+        const today = gameDays[STATE.activeDay];
+
+        // Aggiorna header
+        document.getElementById('header-username').textContent = profile?.display_name || '';
+
+        // Aggiorna tab labels
+        const dayKeys = ['today', 'tomorrow', 'after'];
+        gameDays.forEach((_, i) => {
+          const btn = document.getElementById(`tab-${i}`);
+          if (btn) btn.textContent = T(dayKeys[i]);
+        });
+
+        // Rendering slot cards
+        const container = document.getElementById('slots-container');
+        let html = '';
+        for (let slotIdx = 0; slotIdx < 6; slotIdx++) {
+          if (TIME.isSlotExpired(today.date, slotIdx)) continue;
+          const isCurrent = TIME.getCurrentSlotIndex(today.date) === slotIdx;
+          const timeRange = TIME.getSlotRange(today.date, slotIdx, tzOffset);
+          const slotBookings = BOOKINGS.forSlot(today.date, slotIdx);
+
+          html += `<div class="slot-card">
+            <div class="slot-header ${isCurrent ? 'current' : ''}">${timeRange}</div>
+            ${this._buffSection(today.date, slotIdx, slotBookings, 'science')}
+            ${this._buffSection(today.date, slotIdx, slotBookings, 'construction')}
+          </div>`;
+        }
+        container.innerHTML = html || `<div class="empty-msg" style="padding:1rem">${T('loading')}</div>`;
+      },
+
+      _buffSection(gameDay, slotIdx, slotBookings, buffType) {
+        const myId = STATE.session?.user?.id;
+        const typeKey = buffType === 'science' ? 'science' : 'construction';
+        const icon = buffType === 'science' ? '🔬' : '🏗';
+        const donors = slotBookings.filter(b => b.buff_type === buffType && b.role === 'donor');
+        const requesters = slotBookings.filter(b => b.buff_type === buffType && b.role === 'requester');
+
+        const renderList = (list, role) => {
+          if (list.length === 0) return '';
+          return list.map(b => {
+            const isMe = b.user_id === myId;
+            const isMatched = !!b.matched_with;
+            const partner = isMatched
+              ? slotBookings.find(x => x.id === b.matched_with)
+              : null;
+            let nameHtml;
+            if (isMatched && partner) {
+              if (role === 'donor') {
+                nameHtml = `<span class="booking-name matched">${b.display_name} <span class="match-arrow">↔</span> ${partner.display_name}</span>`;
+              } else {
+                return '';  // requester matchato: già mostrato dal donor
+              }
+            } else {
+              nameHtml = `<span class="booking-name waiting">${b.display_name} (${T('waiting')})</span>`;
+            }
+            const cancelBtn = isMe
+              ? `<button class="cancel-btn" data-booking-id="${b.id}" title="Cancel">✕</button>`
+              : '';
+            return `<div class="booking-row">${nameHtml}${cancelBtn}</div>`;
+          }).join('');
+        };
+
+        const hasMyDonor = !!BOOKINGS.myBooking(gameDay, slotIdx, 'donor', buffType);
+        const hasMyRequester = !!BOOKINGS.myBooking(gameDay, slotIdx, 'requester', buffType);
+        const donateKey = buffType === 'science' ? 'donate_science' : 'donate_construction';
+        const requestKey = buffType === 'science' ? 'request_science' : 'request_construction';
+
+        const actions = [];
+        if (!hasMyDonor) actions.push(`<button class="btn" data-action="book" data-role="donor" data-buff="${buffType}" data-day="${gameDay}" data-slot="${slotIdx}">${T(donateKey)}</button>`);
+        if (!hasMyRequester) actions.push(`<button class="btn" data-action="book" data-role="requester" data-buff="${buffType}" data-day="${gameDay}" data-slot="${slotIdx}">${T(requestKey)}</button>`);
+
+        return `<div class="buff-section">
+          <div class="buff-label">${icon} ${T(typeKey)}</div>
+          ${renderList(donors, 'donor')}
+          ${renderList(requesters, 'requester')}
+          ${actions.length ? `<div class="slot-actions">${actions.join('')}</div>` : ''}
+        </div>`;
+      },
+
+      settingsView() {
+        const p = STATE.profile;
+        if (!p) return;
+        document.getElementById('settings-nickname').value = p.display_name || '';
+        document.getElementById('settings-language').value = p.language || 'en';
+        document.getElementById('settings-theme').value = p.theme || 'dark';
+
+        // Popola select timezone
+        const tzSelect = document.getElementById('settings-timezone');
+        if (tzSelect.options.length === 0) {
+          for (let i = -12; i <= 14; i++) {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = `UTC${i >= 0 ? '+' : ''}${i}`;
+            tzSelect.appendChild(opt);
+          }
+        }
+        tzSelect.value = p.timezone_offset ?? 0;
+        this._updateTzPreview(p.timezone_offset ?? 0);
+
+        // Admin panel
+        const adminSection = document.getElementById('admin-section');
+        if (p.role === 'admin') {
+          adminSection.style.display = 'block';
+          if (typeof ADMIN !== 'undefined') ADMIN.renderUserList();
+        } else {
+          adminSection.style.display = 'none';
+        }
+
+        this.applyTranslations();
+      },
+
+      _updateTzPreview(offset) {
+        const preview = document.getElementById('tz-preview');
+        if (preview) {
+          preview.textContent = `${T('day_starts')} ${TIME.getDayStartLocal(Number(offset))} (${T('your_time')})`;
+        }
+      },
+
+      applyTranslations() {
+        const map = {
+          'login-subtitle': 'login_subtitle',
+          'login-btn': 'enter',
+          'settings-title': 'settings',
+          'settings-section-profile': 'profile',
+          'settings-section-display': 'display',
+          'settings-section-admin': 'admin_panel',
+          'label-nickname': 'nickname',
+          'label-language': 'language',
+          'label-theme': 'theme',
+          'label-timezone': 'timezone',
+          'settings-save': 'save',
+          'logout-btn': 'logout',
+          'slots-loading': 'loading',
+        };
+        Object.entries(map).forEach(([id, key]) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = T(key);
+        });
+      },
+    };
   </script>
 </body>
 </html>
